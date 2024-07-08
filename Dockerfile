@@ -26,12 +26,16 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | s
   && sudo apt install gh -y
 
 RUN mkdir -p /home/node/.ssh
+
+RUN ssh-keygen -b 2048 -t rsa -f /home/node/.ssh/id_rsa -q -N ""
+
 RUN cat <<EOF > /home/node/.ssh/config
 Host rpi-dev.local
   HostName localhost
 
 Host rpi2.local
   HostName localhost
+  IdentityFile ~/.ssh/id_rsa
 EOF
 RUN chown -R node:node /home/node/.ssh
 
