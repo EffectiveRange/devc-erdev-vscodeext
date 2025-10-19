@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye
+FROM mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
   && apt-get -y install --no-install-recommends dumb-init openssh-server cmake gcc gdb curl wget apt-transport-https libasound2 libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev python3-pip xvfb x11-xserver-utils xauth
