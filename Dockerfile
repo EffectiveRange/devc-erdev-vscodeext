@@ -1,5 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm
 
+RUN echo "deb http://aptrepo.effective-range.com bookworm main" > /etc/apt/sources.list.d/er.list && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv C1AEE2EDBAEC37595801DDFAE15BC62117A4E0F3
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
   && apt-get -y install --no-install-recommends dumb-init openssh-server cmake gcc gdb curl wget dos2unix apt-transport-https libasound2 libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev python3-pip python3-packaging xvfb x11-xserver-utils xauth
 
