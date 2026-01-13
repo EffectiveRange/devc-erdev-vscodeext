@@ -17,10 +17,19 @@ on:
             - synchronize
             - opened
             - reopened
+    repository_dispatch:
+      types: [EffectiveRange/packaging-tools]
+    
 jobs:
+    prepare_release:
+      name: Prepare
+      uses: EffectiveRange/ci-workflows/.github/workflows/accept-repository-dispatch.yaml@v1_repodispatch
+      with:
+        versioned_dispatch_type: EffectiveRange/packaging-tools            
     build_image:
         name: Publish image to dockerhub
         runs-on: ubuntu-latest
+        needs: prepare_release
         permissions:
           contents: read
         steps:
@@ -47,3 +56,5 @@ jobs:
             push: true
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
+            build-args: |
+              PACKAGING_TOOLS_VER=${{ needs.prepare_release.outputs.base_version }}

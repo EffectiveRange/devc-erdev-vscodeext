@@ -1,30 +1,60 @@
-FROM mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm
+FROM mcr.microsoft.com/devcontainers/typescript-node:20-trixie
 
-RUN echo "deb http://aptrepo.effective-range.com bookworm main" > /etc/apt/sources.list.d/er.list && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv C1AEE2EDBAEC37595801DDFAE15BC62117A4E0F3
+ARG PACKAGING_TOOLS_VER=latest
+ENV PACKAGING_TOOLS_VER=${PACKAGING_TOOLS_VER}
+
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-  && apt-get -y install --no-install-recommends dumb-init openssh-server cmake gcc gdb curl wget dos2unix apt-transport-https libasound2 libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev python3-pip python3-packaging xvfb x11-xserver-utils xauth packaging-tools
+  && apt-get -y install --no-install-recommends ca-certificates dumb-init openssh-server cmake gcc gdb curl wget dos2unix apt-transport-https libasound2  libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf-xlib-2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev python3-pip python3-packaging xvfb x11-xserver-utils xauth gnupg
+
+RUN wget -O- https://raw.githubusercontent.com/EffectiveRange/infrastructure-configuration/refs/heads/main/aptrepo/apt-server/add_repo.sh 2>/dev/null | /bin/bash
 
 RUN apt-get -y install --no-install-recommends rubygems && gem install --no-document fpm
 
+RUN . /etc/os-release && \
+    if [ "${PACKAGING_TOOLS_VER}" = "latest" ]; then \
+        apt install -y packaging-tools; \
+    else \
+        wget -O /tmp/packaging-tools.deb \
+        "https://github.com/EffectiveRange/packaging-tools/releases/download/${PACKAGING_TOOLS_VER}/${VERSION_CODENAME}_packaging-tools_${PACKAGING_TOOLS_VER#v}-1_all.deb" && \
+        apt install -y /tmp/packaging-tools.deb && \
+        rm -f /tmp/packaging-tools.deb; \
+    fi
 
-RUN mkdir /var/run/sshd && passwd -d node
+RUN mkdir -p /var/run/sshd && passwd -d node
 
 # SSH login fix. Otherwise user is kicked off after login
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 # Enable passwordless SSH login
 RUN sed -i 's/#PermitEmptyPasswords no/PermitEmptyPasswords yes/' /etc/ssh/sshd_config
 
-RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg && \
-  install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/  && \
-  echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list && \
-  apt-get update && \
-  apt-get install -y code
+RUN install -d -m 0755 /usr/share/keyrings; curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+      | gpg --dearmor -o /usr/share/keyrings/microsoft-archive-keyring.gpg; \
+    chmod 0644 /usr/share/keyrings/microsoft-archive-keyring.gpg;
 
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-  && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-  && sudo apt update \
-  && sudo apt install gh -y
+RUN  cat <<EOF > /etc/apt/sources.list.d/vscode.sources 
+Types: deb
+URIs: https://packages.microsoft.com/repos/vscode
+Suites: stable
+Components: main
+Architectures: amd64
+Signed-By: /usr/share/keyrings/microsoft-archive-keyring.gpg
+EOF
+
+  
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    -o /usr/share/keyrings/githubcli-archive-keyring.gpg; \
+  chmod 0644 /usr/share/keyrings/githubcli-archive-keyring.gpg;
+
+RUN cat <<EOF > /etc/apt/sources.list.d/github-cli.sources 
+Types: deb
+URIs: https://cli.github.com/packages
+Suites: stable
+Components: main
+Architectures: amd64
+Signed-By: /usr/share/keyrings/githubcli-archive-keyring.gpg
+EOF
+
+RUN  apt-get update;  apt-get install -y --no-install-recommends code gh; 
 
 RUN mkdir -p /home/node/.ssh
 
