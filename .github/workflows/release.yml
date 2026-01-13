@@ -12,6 +12,7 @@ name: Publish Docker image
 on:
     push:
         branches: main
+        tags: v*.*.*
     pull_request: 
         types:
             - synchronize
@@ -47,14 +48,25 @@ jobs:
               images: |
                 effectiverange/devc-erdev-vscodeext
               flavor: |
-                latest=${{ endsWith(github.ref, '/main') }}
+                latest=true
         - name: Build and push Docker images
           id: dbuild
           uses: docker/build-push-action@v5
           with:
             context: .
-            push: true
+            push: ${{ github.event_name != 'pull_request' }}
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
             build-args: |
               PACKAGING_TOOLS_VER=${{ needs.prepare_release.outputs.base_version }}
+
+    dispatch_downstream:
+      name: Dispatch downstream repo
+      if: github.event_name != 'pull_request'
+      needs: [prepare_release,build_image]
+      uses: EffectiveRange/ci-workflows/.github/workflows/repository-dispatch.yaml@v1_repodispatch
+      secrets: inherit
+      with:
+        downstream_repo: vscodeext-er-dev
+        event_type: ${{ github.repository }}
+        version: ${{ needs.prepare_release.outputs.tag }}    
