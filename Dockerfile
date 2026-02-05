@@ -6,7 +6,7 @@ ENV PACKAGING_TOOLS_VER=${PACKAGING_TOOLS_VER}
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
   && apt-get -y install --no-install-recommends python3-setuptools ca-certificates dumb-init openssh-server cmake gcc gdb curl wget dos2unix apt-transport-https libasound2  libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf-xlib-2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev python3-pip python3-packaging xvfb x11-xserver-utils xauth gnupg
 
-RUN wget -O- https://raw.githubusercontent.com/EffectiveRange/infrastructure-configuration/refs/heads/main/aptrepo/apt-server/add_repo.sh 2>/dev/null | /bin/bash
+RUN wget -O- https://raw.githubusercontent.com/EffectiveRange/infrastructure-configuration/refs/heads/main/aptrepo/repository/add_repo.sh 2>/dev/null | /bin/bash
 
 RUN apt-get -y install --no-install-recommends rubygems && gem install --no-document fpm
 
